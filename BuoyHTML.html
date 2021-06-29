@@ -2,30 +2,49 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css" type="text/css">
     <style>
       .map {
+        margin: 0;
+        padding: 0;
+        right: 100px;
         height: 700px;
-        width: 100%;
+        width: 98%;
+        border: 1px solid red;
       }
       .map .ol-zoom {
-      top: 20px;
-      left: 5px;
+      top: .25em;
+      left: .25em;
       }
-      .map:-webkit-full-screen {
-      height: 100%;
-      margin: 0;
+      .fullscreen:-webkit-full-screen {
+        top: .25em;
+        right: .25em;
+      }
+      .fullscreen:-ms-fullscreen {
+        height: 100%;
+      }
+      .fullscreen:fullscreen {
+        height: 100%;
       }
       .ol-scale-line {
-      height: 10px;
-      bottom: 20px;
+      bottom: .25em;
       }
       .map .ol-rotate {
       top: 3em;
+      }
+      .overlay-container {
+        position: absolute;
+        background-color: white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px;
+        min-width: 28ch;
       }
     </style>
     <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
     <title>OpenLayers example</title>
   
   
-    <h2>Bouys</h2>
     <input type="checkbox" id="buoy1" checked=""> Buoy One <br>
         <il>
             <input type="checkbox" id="buoy1Path"> Path Visible<br>
@@ -40,7 +59,6 @@
         <span class="overlay-text" id="Feature-Pressure"></span><br>
         <span class="overlay-text" id="Feature-Time"></span><br>
     </div>
-    <h2>Bouy Project Visualization</h2>
     <div id="map" class="map"></div>
     <script type="text/javascript">
 
@@ -59,8 +77,10 @@
     view: new ol.View({
         center: [0, 0],
         projection: 'EPSG:4326',
-        zoom: 0,
-        maxZoom: 18
+        zoom: 3,
+        maxZoom: 18,
+        minZoom: 3,
+        padding: [0, 150, 0, 0]
     })
 
 });
@@ -160,7 +180,7 @@ const strokeStyle = new ol.style.Stroke ({
 
 const buoy1 = new ol.layer.Vector({
         source: new ol.source.Vector({
-            url: 'http://38.123.149.95/wp-content/uploads/buoy-data/300434064121410.json',
+            url: 'http://38.123.149.95/wp-content/uploads/buoy-data/100300434064121410.json',
             format: new ol.format.GeoJSON()
         }),
         visible: true,
@@ -174,7 +194,7 @@ const buoy1 = new ol.layer.Vector({
 
 const buoy2 = new ol.layer.Vector({
         source: new ol.source.Vector({
-            url: 'http://38.123.149.95/wp-content/uploads/buoy-data/300434064122530.json',
+            url: 'http://38.123.149.95/wp-content/uploads/buoy-data/100300434064122530.json',
             format: new ol.format.GeoJSON()
         }),
         visible: true,
@@ -224,9 +244,9 @@ map.on('click', function(e){
         let clickedTime = feature.get('Time');
         console.log(clickedCoord);
         overlayLayer.setPosition(clickedCoord);
-        overlayFeatureTemperature.innerHTML = clickedTemperature;
-        overlayFeaturePressure.innerHTML = clickedPressure;
-        overlayFeatureTime.innerHTML = clickedTime;
+        overlayFeatureTemperature.innerHTML = 'Temperature: ' + clickedTemperature + '°C';
+        overlayFeaturePressure.innerHTML = 'Presssure: ' + clickedPressure;
+        overlayFeatureTime.innerHTML = 'On ' + clickedTime;
     })
 })
 
@@ -267,7 +287,7 @@ var styleArrow = function (feature) {
     return styles;
 };
 
-window.onload = function createPaths() {
+setTimeout(function createPaths() {
     var geojson = []
 
     buoy1.getSource().forEachFeature(function (feature) {
@@ -330,7 +350,6 @@ window.onload = function createPaths() {
 
     document.getElementById("buoy2Path").addEventListener("change", changePathVis);
 
-}
-
+}, 500);
     </script>
 <!-- /wp:html -->
