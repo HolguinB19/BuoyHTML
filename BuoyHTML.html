@@ -2,20 +2,15 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css" type="text/css">
     <style>
       .map {
-        margin: 0;
-        padding: 0;
-        right: 100px;
         height: 700px;
-        width: 98%;
-        border: 1px solid red;
+        width: 100%;
       }
       .map .ol-zoom {
       top: .25em;
       left: .25em;
       }
       .fullscreen:-webkit-full-screen {
-        top: .25em;
-        right: .25em;
+        height: 100%;
       }
       .fullscreen:-ms-fullscreen {
         height: 100%;
@@ -40,11 +35,33 @@
         left: -50px;
         min-width: 28ch;
       }
+      ul{
+        padding-top: 10px;
+      }
+      il{
+        padding-left: 20px;
+      }
+      .button {
+        background-color: #181414; /* Cod Grey */
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+      }
+      
     </style>
     <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
-    <title>OpenLayers example</title>
-  
-  
+    <title>Odyssey Extreme Expedition Buoy Map</title>
+
+    <label for "buoyStartDate">Start date:</label>
+    <input type="date" id="buoyStartDate" name="Start" min="2021-05-01">
+
+    <label for "buoyEndDate">End date:</label>
+    <input type="date" id="buoyEndDate" name="End">
+  <ul>
     <input type="checkbox" id="buoy1" checked=""> Buoy One <br>
         <il>
             <input type="checkbox" id="buoy1Path"> Path Visible<br>
@@ -53,6 +70,7 @@
         <il>
             <input type="checkbox" id="buoy2Path"> Path Visible<br>
         </il>
+  </ul>
 
     <div class="overlay-container">
         <span class="overlay-text" id="Feature-Temperature"></span><br>
@@ -60,6 +78,10 @@
         <span class="overlay-text" id="Feature-Time"></span><br>
     </div>
     <div id="map" class="map"></div>
+
+    <h4 >Full data download</h4>
+    <a href="http://38.123.149.95/wp-content/uploads/buoy-data/300434064121410.csv" class="button" download="Buoy1Data.csv"> Buoy 1 Download</a>
+    <a href="http://38.123.149.95/wp-content/uploads/buoy-data/300434064122530.csv" class="button" download="Buoy2Data.csv"> Buoy 2 Download</a>
     <script type="text/javascript">
 
 
@@ -85,78 +107,6 @@
 
 });
 
-    var geojsonObject = {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": {
-          "Time": 300434064120490,
-          "Temperature": 12.63,
-          "Pressure": 68414.94
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -77.373962,
-          35.614325
-        ]
-      }
-    }
-  ]
-}
-
-var geojsonObject1 = {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": {
-        "Temperature": 89,
-        "Pressure": 7523,
-        "Time": "5'o'clock"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -80.22216796875,
-          25.799891182088334
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "Temperature": 100,
-        "Pressure": 6000,
-        "Time": "Test Time"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -66.11572265625,
-          18.46918890441719
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "Temperature": 500,
-        "Pressure": 9001,
-        "Time": "Mon, Jun 14, 2021"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -64.78431701660156,
-          32.29525895520317
-        ]
-      }
-    }
-  ]
-}
-
 const strokeStyle = new ol.style.Stroke ({
         color: [46, 45, 45, 1],
         width: 1.2
@@ -178,9 +128,12 @@ const strokeStyle = new ol.style.Stroke ({
         stroke: strokeStyle
     })
 
+
+
+
 const buoy1 = new ol.layer.Vector({
-        source: new ol.source.Vector({
-            url: 'http://38.123.149.95/wp-content/uploads/buoy-data/100300434064121410.json',
+        source: buoy1SourceOriginal = new ol.source.Vector({
+            url: 'http://38.123.149.95/wp-content/uploads/buoy-data/300434064121410.json',
             format: new ol.format.GeoJSON()
         }),
         visible: true,
@@ -191,12 +144,21 @@ const buoy1 = new ol.layer.Vector({
         })
     })
 
+var startDate = new Date("2021-05-01");
+var endDate = new Date();
+var firstPass = true;
+var buoy1Path;
+var testPath1Source;
+var buoy2Path;
+var testPath2Source;
+
+var buoy2Source = new ol.source.Vector({
+            url: 'http://38.123.149.95/wp-content/uploads/buoy-data/300434064122530.json',
+            format: new ol.format.GeoJSON()
+        })
 
 const buoy2 = new ol.layer.Vector({
-        source: new ol.source.Vector({
-            url: 'http://38.123.149.95/wp-content/uploads/buoy-data/100300434064122530.json',
-            format: new ol.format.GeoJSON()
-        }),
+        source: buoy2Source,
         visible: true,
         title: 'Test Bouy',
         style: new ol.style.Style({
@@ -218,9 +180,23 @@ function changeVis() {
     var currentBuoy = this.id;
     if (currentBuoy == "buoy1") {
         buoy1.setVisible(this.checked);
+        if (document.getElementById("buoy1").checked == false) {
+          document.getElementById("buoy1Path").checked = false;
+          buoy1Path.setVisible(this.checked);
+          document.getElementById("buoy1Path").disabled = true;
+        } else {
+          document.getElementById("buoy1Path").disabled = false;
+        }
     }
     else if (currentBuoy == "buoy2") {
         buoy2.setVisible(this.checked);
+        if (document.getElementById("buoy2").checked == false) {
+          document.getElementById("buoy2Path").checked = false;
+          buoy2Path.setVisible(this.checked);
+          document.getElementById("buoy2Path").disabled = true;
+      } else {
+        document.getElementById("buoy2Path").disabled = false;
+      }
     }
 }
 
@@ -242,16 +218,29 @@ map.on('click', function(e){
         let clickedTemperature = feature.get('Temperature');
         let clickedPressure = feature.get('Pressure');
         let clickedTime = feature.get('Time');
-        console.log(clickedCoord);
         overlayLayer.setPosition(clickedCoord);
         overlayFeatureTemperature.innerHTML = 'Temperature: ' + clickedTemperature + '°C';
-        overlayFeaturePressure.innerHTML = 'Presssure: ' + clickedPressure;
+        overlayFeaturePressure.innerHTML = 'Presssure: ' + clickedPressure + " Pa";
         overlayFeatureTime.innerHTML = 'On ' + clickedTime;
     })
 })
 
 document.getElementById("buoy1").addEventListener("change", changeVis);
+
 document.getElementById("buoy2").addEventListener("change", changeVis);
+
+
+document.getElementById("buoyStartDate").addEventListener("change", function() {
+  startDate = new Date(this.value);
+  updateBuoys();
+  createPaths();
+});
+
+document.getElementById("buoyEndDate").addEventListener("change", function() {
+  endDate = new Date(this.value);
+  updateBuoys();
+  createPaths();
+});
 
 var styleArrow = function (feature) {
     var geometry = feature.getGeometry();
@@ -259,7 +248,7 @@ var styleArrow = function (feature) {
         // linestring
         new ol.style.Style({
             stroke: new ol.style.Stroke({
-                color: 'green',
+                color: [26, 198, 244, .8],
                 width: 2,
             }),
         })];
@@ -273,7 +262,7 @@ var styleArrow = function (feature) {
             new ol.style.Style({
                 geometry: new ol.geom.Point(end),
                 image: new ol.style.Icon({
-                    color: 'green',
+                    color: [80, 130, 244, 1],
                     src: 'https://openlayers.org/en/latest/examples/data/arrow.png',
                     anchor: [0.75, 0.5],
                     rotateWithView: true,
@@ -286,55 +275,118 @@ var styleArrow = function (feature) {
 
     return styles;
 };
+function updateBuoys() {
 
-setTimeout(function createPaths() {
+  buoy1.getSource().forEachFeature(function (feature) {
+    var buoyTime = new Date(feature.get('Time'));
+    if (startDate <= buoyTime) {
+        if(endDate >= buoyTime) {
+          feature.setStyle(new ol.style.Style({
+            stroke: strokeStyle,
+            image: circleStyleGreen
+        }));
+        feature.changed();
+        } else {
+          feature.setStyle(new ol.style.Style(null));
+          feature.changed();
+        }
+      } else {
+        feature.setStyle(new ol.style.Style(null)); 
+        feature.changed();
+      }
+  })
+
+  buoy2.getSource().forEachFeature(function (feature) {
+    var buoyTime = new Date(feature.get('Time'));
+    if (startDate <= buoyTime) {
+        if(endDate >= buoyTime) {
+          feature.setStyle(new ol.style.Style({
+            stroke: strokeStyle,
+            image: circleStyleRed
+        }));
+        feature.changed();
+        } else {
+          feature.setStyle(new ol.style.Style(null));
+          feature.changed();
+        }
+      } else {
+        feature.setStyle(new ol.style.Style(null));
+        feature.changed();
+      }
+  })
+}
+
+function createPaths() {
     var geojson = []
 
     buoy1.getSource().forEachFeature(function (feature) {
-        var x = feature.getGeometry().getCoordinates()[0];
-        var y = feature.getGeometry().getCoordinates()[1];
-        geojson.push([x, y]);
+      var buoyTime = new Date(feature.get('Time'));
+      if (startDate <= buoyTime) {
+        if(endDate>= buoyTime) {
+          var x = feature.getGeometry().getCoordinates()[0];
+          var y = feature.getGeometry().getCoordinates()[1];
+          geojson.push([x, y]);
+        }
+      }
     });
+
+
 
     var lineString = { "type": "LineString", "coordinates": geojson }
 
-    var testPath1Source = new ol.source.Vector({
-        features: new ol.format.GeoJSON().readFeatures(lineString),
-    });
+    if (firstPass == true) {
+      
+      testPath1Source = new ol.source.Vector({
+          features: new ol.format.GeoJSON().readFeatures(lineString),
+      });
 
-    var buoy1Path = new ol.layer.Vector({
-        source: testPath1Source,
-        visible: false,
-        title: 'Test Path',
-        style: styleArrow
-    });
+      buoy1Path = new ol.layer.Vector({
+          source: testPath1Source,
+          visible: false,
+          title: 'Test Path',
+          style: styleArrow
+      });
 
-    map.addLayer(buoy1Path);
+      map.addLayer(buoy1Path);
+    } else {
+      buoy1Path.getSource().clear();
+      buoy1Path.getSource().addFeatures(new ol.format.GeoJSON().readFeatures(lineString));
+    }
 
 
     var geojson = []
 
     buoy2.getSource().forEachFeature(function (feature) {
-        var x = feature.getGeometry().getCoordinates()[0];
-        var y = feature.getGeometry().getCoordinates()[1];
-        console.log([x, y]);
-        geojson.push([x, y]);
+      var buoyTime = new Date(feature.get('Time'));
+      if (startDate <= buoyTime) {
+        if(endDate>= buoyTime) {
+          var x = feature.getGeometry().getCoordinates()[0];
+          var y = feature.getGeometry().getCoordinates()[1];
+          geojson.push([x, y]);
+        }
+      }
     });
 
     var lineString = { "type": "LineString", "coordinates": geojson }
 
-    var testPath2Source = new ol.source.Vector({
-        features: new ol.format.GeoJSON().readFeatures(lineString),
-    });
+    if (firstPass == true) {
+      testPath2Source = new ol.source.Vector({
+          features: new ol.format.GeoJSON().readFeatures(lineString),
+      });
 
-    var buoy2Path = new ol.layer.Vector({
-        source: testPath2Source,
-        visible: false,
-        title: 'Test Path',
-        style: styleArrow,
-    });
+      buoy2Path = new ol.layer.Vector({
+          source: testPath2Source,
+          visible: false,
+          title: 'Test Path',
+          style: styleArrow,
+      });
 
-    map.addLayer(buoy2Path);
+      map.addLayer(buoy2Path);
+    } else {
+      buoy2Path.getSource().clear();
+      buoy2Path.getSource().addFeatures(new ol.format.GeoJSON().readFeatures(lineString));
+    }
+
 
     function changePathVis() {
         var currentBuoyPath = this.id;
@@ -347,9 +399,11 @@ setTimeout(function createPaths() {
     }
 
     document.getElementById("buoy1Path").addEventListener("change", changePathVis);
-
+    
     document.getElementById("buoy2Path").addEventListener("change", changePathVis);
 
-}, 500);
+    firstPass = false;
+}
+setTimeout(createPaths, 1000);
     </script>
 <!-- /wp:html -->
